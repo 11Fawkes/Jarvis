@@ -1,0 +1,16 @@
+{
+  "chats": [],
+  "alive": [
+    {"icon": "💼", "label": "Job applications", "sub": "active · target: 3/week", "status": "active"},
+    {"icon": "🏥", "label": "Doctor appointment", "sub": "this week · no date set", "status": "pending"},
+    {"icon": "🏋️", "label": "Gym", "sub": "goal: 3× per week", "status": "flagged"},
+    {"icon": "🥦", "label": "Groceries", "sub": "pending · salt especially", "status": "pending"},
+    {"icon": "🇩🇪", "label": "German study", "sub": "B2 goal · targeting daily", "status": "flagged"}
+  ],
+  "weekly_goals": ["Apply to 3 Business Analyst roles in Berlin"],
+  "week_theme": "Applications",
+  "settings": {
+    "challenge_start": "2026-05-04",
+    "name": "Dhruv"
+  }
+}
