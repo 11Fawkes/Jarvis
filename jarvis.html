@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<title>JARVIS · Dhruv</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E63946;
+    --blue: #1D7FE8;
+    --white: #F2F2F2;
+    --black: #0a0a0a;
+    --card: #111111;
+    --border: #1e1e1e;
+    --muted: #555555;
+    --faint: #181818;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'JetBrains Mono', monospace;
+    min-height: 100vh;
+    max-width: 430px;
+    margin: 0 auto;
+    padding-bottom: 80px;
+  }
+
+  /* NAV */
+  .nav {
+    position: fixed;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 100%; max-width: 430px;
+    background: rgba(10,10,10,0.98);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0 24px;
+    z-index: 100;
+    backdrop-filter: blur(20px);
+  }
+
+  .nav-btn {
+    background: none; border: none;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+    cursor: pointer; padding: 0 12px;
+    color: var(--muted);
+    transition: color 0.2s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .nav-btn.active { color: var(--red); }
+  .nav-btn span:first-child { font-size: 18px; }
+  .nav-btn span:last-child { font-size: 8px; letter-spacing: 1.5px; }
+
+  /* SCREENS */
+  .screen { display: none; padding: 28px 18px 20px; animation: fadeUp 0.25s ease; }
+  .screen.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* TYPOGRAPHY */
+  .page-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px; font-weight: 900;
+    line-height: 1.1; color: var(--white);
+  }
+
+  .page-sub {
+    font-size: 9px; letter-spacing: 2.5px;
+    color: var(--muted); margin-top: 3px;
+  }
+
+  .section-label {
+    font-size: 9px; letter-spacing: 2px;
+    color: var(--muted); text-transform: uppercase;
+    margin-bottom: 10px; margin-top: 20px;
+  }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 10px;
+  }
+
+  .card-red { border-left: 3px solid var(--red); }
+  .card-blue { border-left: 3px solid var(--blue); }
+
+  /* HOME */
+  .obt-card {
+    background: var(--red);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 18px 0 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .obt-card::after {
+    content: '';
+    position: absolute;
+    right: -30px; top: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+
+  .obt-label {
+    font-size: 9px; letter-spacing: 2.5px;
+    color: rgba(255,255,255,0.65);
+    margin-bottom: 8px;
+  }
+
+  .obt-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px; font-weight: 700;
+    color: #fff; line-height: 1.3;
+  }
+
+  .obt-reminder {
+    font-size: 10px; color: rgba(255,255,255,0.55);
+    margin-top: 8px; letter-spacing: 1px;
+  }
+
+  /* PROGRESS */
+  .progress-bar {
+    background: var(--faint);
+    border-radius: 99px; height: 4px;
+    margin: 6px 0 4px;
+  }
+
+  .progress-fill {
+    background: linear-gradient(90deg, var(--red), var(--blue));
+    border-radius: 99px; height: 4px;
+    transition: width 0.5s ease;
+  }
+
+  /* TASKS */
+  .task-item {
+    display: flex; align-items: flex-start;
+    gap: 12px; padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+
+  .task-item:last-child { border-bottom: none; }
+
+  .task-check {
+    width: 20px; height: 20px;
+    border-radius: 5px; flex-shrink: 0;
+    border: 2px solid var(--muted);
+    display: flex; align-items: center;
+    justify-content: center;
+    transition: all 0.2s; margin-top: 1px;
+  }
+
+  .task-check.red { border-color: var(--red); }
+  .task-check.blue { border-color: var(--blue); }
+  .task-check.done { background: #22c55e; border-color: #22c55e; }
+
+  .task-text { font-size: 13px; color: var(--white); line-height: 1.5; flex: 1; }
+  .task-text.done-text { text-decoration: line-through; color: var(--muted); }
+
+  .task-tag {
+    font-size: 8px; letter-spacing: 1px;
+    padding: 2px 7px; border-radius: 4px;
+    text-transform: uppercase; font-weight: 700;
+    flex-shrink: 0; margin-top: 2px;
+  }
+
+  .carried-flag {
+    font-size: 9px; color: #f59e0b;
+    letter-spacing: 1px; margin-top: 2px;
+  }
+
+  /* ALIVE ITEMS */
+  .alive-item {
+    display: flex; justify-content: space-between;
+    align-items: center; padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px; margin-bottom: 8px;
+  }
+
+  .alive-left { display: flex; gap: 12px; align-items: center; }
+  .alive-icon { font-size: 22px; }
+
+  .alive-label { font-size: 13px; color: var(--white); font-weight: 700; }
+  .alive-sub { font-size: 10px; color: var(--muted); margin-top: 2px; letter-spacing: 0.5px; }
+
+  .status-pill {
+    font-size: 8px; letter-spacing: 1.2px;
+    padding: 3px 9px; border-radius: 4px;
+    font-weight: 700; text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  /* WEEKLY */
+  .week-theme {
+    background: var(--card);
+    border: 1px solid rgba(230,57,70,0.25);
+    border-radius: 16px; padding: 20px;
+    text-align: center; margin: 18px 0 10px;
+  }
+
+  .week-theme-word {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px; font-weight: 900;
+    color: var(--white);
+  }
+
+  .day-dots {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+  }
+
+  .day-dot-wrap { text-align: center; }
+  .day-dot-label { font-size: 8px; color: var(--muted); margin-bottom: 8px; }
+  .day-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%; margin: 0 auto;
+  }
+
+  /* HABIT */
+  .habit-row {
+    display: flex; justify-content: space-between;
+    align-items: center; padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .habit-row:last-child { border-bottom: none; }
+  .habit-name { font-size: 13px; color: var(--white); }
+  .habit-dots { display: flex; gap: 5px; }
+  .habit-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+  }
+
+  /* LOG */
+  .chat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    display: flex; justify-content: space-between;
+    align-items: center; padding: 14px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+
+  .chat-header.open { border-color: var(--border); }
+
+  .chat-num {
+    font-size: 9px; color: var(--red);
+    letter-spacing: 2px; font-weight: 700;
+  }
+
+  .chat-date { font-size: 11px; color: var(--white); margin-top: 2px; }
+  .chat-summary { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+  .chat-chevron {
+    font-size: 12px; color: var(--muted);
+    transition: transform 0.2s;
+  }
+
+  .chat-chevron.open { transform: rotate(180deg); }
+
+  .chat-body { display: none; padding: 14px 16px; }
+  .chat-body.open { display: block; }
+
+  .block-item {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .block-item:last-child { border-bottom: none; }
+
+  .block-num {
+    font-size: 8px; color: var(--blue);
+    letter-spacing: 1.5px; margin-bottom: 6px;
+  }
+
+  .block-row {
+    font-size: 11px; color: #aaa;
+    line-height: 1.7;
+  }
+
+  .block-row span { color: var(--white); }
+
+  /* CONTEXT BLOCK — hidden, for Claude to read */
+  #context-block {
+    display: none;
+  }
+
+  /* PILL TAGS */
+  .pill-red { background: rgba(230,57,70,0.15); color: var(--red); border: 1px solid rgba(230,57,70,0.25); }
+  .pill-blue { background: rgba(29,127,232,0.15); color: var(--blue); border: 1px solid rgba(29,127,232,0.25); }
+  .pill-green { background: rgba(34,197,94,0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.2); }
+  .pill-amber { background: rgba(245,158,11,0.12); color: #f59e0b; border: 1px solid rgba(245,158,11,0.2); }
+
+  /* HEADER ROW */
+  .header-row {
+    display: flex; justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  /* GRID 2 */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px;
+  }
+
+  .stat-label { font-size: 9px; color: var(--muted); letter-spacing: 1.5px; margin-bottom: 6px; }
+  .stat-val { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: var(--white); }
+  .stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* QUOTE */
+  .daily-quote {
+    border-left: 3px solid var(--red);
+    padding-left: 14px;
+    font-family: 'Playfair Display', serif;
+    font-style: italic; font-size: 14px;
+    color: var(--muted); line-height: 1.65;
+    margin: 16px 0;
+  }
+
+  /* WEEK GOAL PROGRESS */
+  .goal-track {
+    background: var(--faint);
+    border-radius: 12px; padding: 14px;
+    margin-bottom: 8px;
+  }
+
+  .goal-track-label { font-size: 11px; color: var(--white); margin-bottom: 8px; }
+  .goal-track-sub { font-size: 10px; color: var(--muted); margin-top: 6px; }
+
+  /* WINS LIST */
+  .win-item {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 8px 0; font-size: 13px; color: #ccc;
+    border-bottom: 1px solid var(--border);
+  }
+  .win-item:last-child { border-bottom: none; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 0; }
+
+  /* ADD BUTTON */
+  .add-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    border-radius: 12px; padding: 12px;
+    color: var(--muted); font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 1px; cursor: pointer;
+    width: 100%; margin-top: 6px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .add-btn:hover { border-color: var(--red); color: var(--red); }
+</style>
+</head>
+<body>
+
+<!-- HIDDEN CONTEXT BLOCK — Claude reads this -->
+<div id="context-block">
+JARVIS CONTEXT BLOCK
+====================
+User: Dhruv Kumar
+Location: Kreuzberg, Berlin
+Visa: Job Seeker Visa
+Role target: Business Analyst (primary), Data Analyst (secondary)
+Portfolio: 11fawkes.github.io
+GitHub: github.com/11Fawkes
+German level: A1-B1+, targeting B2
+
+CURRENT WEEK GOAL: Apply to 3 Business Analyst roles in Berlin
+WEEK PROGRESS: 1/3 applications sent
+WEEK THEME: Applications
+WEEK: Apr 28 — May 3 2026
+
+LAST SESSION: Chat 001 · Evening · May 3 2026
+One Big Thing: Apply for jobs ✓ (1 sent)
+Must: Job application ✓ · Groceries ✓ · Work ✓
+Should: Doctor appointment ✗ (carried)
+Can: Gym ✗ (carried — 3rd time this week)
+Carried forward: Gym · Doctor appointment
+What's Alive: Job apps ACTIVE · Doctor PENDING · Gym FLAGGED · German FLAGGED
+One line: Slow start, strong finish. First application sent.
+
+NEXT CHAT OPENS AS: Chat 002
+====================
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn active" onclick="showScreen('home', this)">
+    <span>⌂</span><span>HOME</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('tasks', this)">
+    <span>✓</span><span>TASKS</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('alive', this)">
+    <span>◎</span><span>ALIVE</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('weekly', this)">
+    <span>↗</span><span>WEEK</span>
+  </button>
+  <button class="nav-btn" onclick="showScreen('log', this)">
+    <span>📖</span><span>LOG</span>
+  </button>
+</nav>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- HOME SCREEN -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-home" class="screen active">
+
+  <div class="header-row">
+    <div>
+      <div style="font-size:10px;letter-spacing:2.5px;color:var(--muted)">SUNDAY · MAY 3 · 2026</div>
+      <div class="page-title" style="margin-top:4px">Hey,<br>Dhruv.</div>
+    </div>
+    <div style="text-align:right;padding-top:4px">
+      <div style="font-size:10px;color:var(--muted);letter-spacing:1px">CHAT</div>
+      <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--red);line-height:1">001</div>
+    </div>
+  </div>
+
+  <!-- ONE BIG THING -->
+  <div class="obt-card">
+    <div class="obt-label">⚡ ONE BIG THING TODAY</div>
+    <div class="obt-text" id="home-obt">Apply for jobs</div>
+    <div class="obt-reminder">⏰ REMINDER · 3:00 PM</div>
+  </div>
+
+  <!-- STATS ROW -->
+  <div class="grid2">
+    <div class="stat-card">
+      <div class="stat-label">TASKS DONE</div>
+      <div class="stat-val">2<span style="font-size:14px;color:var(--muted);font-weight:400">/6</span></div>
+      <div class="progress-bar" style="margin-top:8px">
+        <div class="progress-fill" style="width:33%"></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">WEEK GOAL</div>
+      <div class="stat-val" style="color:var(--blue)">1<span style="font-size:14px;color:var(--muted);font-weight:400">/3</span></div>
+      <div class="stat-sub">APPLICATIONS</div>
+    </div>
+  </div>
+
+  <!-- DAILY THOUGHT -->
+  <div class="daily-quote" id="home-thought">
+    "Guilt is data, not a verdict. One application sent. The rest follows."
+  </div>
+
+  <!-- QUICK VIEW — MUST DOS -->
+  <div class="section-label">TODAY · MUST DO</div>
+  <div class="card card-red">
+    <div class="task-item">
+      <div class="task-check red"></div>
+      <div class="task-text">Apply for jobs (3–4 PM)</div>
+    </div>
+    <div class="task-item">
+      <div class="task-check done">✓</div>
+      <div class="task-text done-text">Work</div>
+    </div>
+    <div class="task-item" style="border:none">
+      <div class="task-check done">✓</div>
+      <div class="task-text done-text">Breakfast</div>
+    </div>
+  </div>
+
+  <!-- CARRIED FORWARD ALERT -->
+  <div class="card" style="border-color:rgba(245,158,11,0.25);border-left:3px solid #f59e0b">
+    <div style="font-size:9px;color:#f59e0b;letter-spacing:2px;margin-bottom:8px">↩ CARRIED FORWARD</div>
+    <div style="font-size:12px;color:#ccc">Gym · Doctor appointment</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:4px">Gym slipped 3× this week. Worth a look.</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- TASKS SCREEN -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-tasks" class="screen">
+
+  <div class="page-title">Tasks</div>
+  <div class="page-sub">TODAY · MAY 3 2026</div>
+
+  <div class="progress-bar" style="margin-top:16px">
+    <div class="progress-fill" style="width:33%"></div>
+  </div>
+  <div style="font-size:10px;color:var(--muted);margin-top:6px;letter-spacing:1px">2 OF 6 DONE</div>
+
+  <!-- MUST DO -->
+  <div class="section-label" style="color:var(--red)">🔴 MUST DO</div>
+  <div class="card">
+    <div class="task-item" onclick="toggleTask(this)">
+      <div class="task-check red"></div>
+      <div style="flex:1">
+        <div class="task-text">Apply for jobs</div>
+      </div>
+      <span class="task-tag pill-red">career</span>
+    </div>
+    <div class="task-item" onclick="toggleTask(this)">
+      <div class="task-check done">✓</div>
+      <div style="flex:1">
+        <div class="task-text done-text">Work</div>
+      </div>
+      <span class="task-tag pill-green">work</span>
+    </div>
+    <div class="task-item" style="border:none" onclick="toggleTask(this)">
+      <div class="task-check done">✓</div>
+      <div style="flex:1">
+        <div class="task-text done-text">Breakfast</div>
+      </div>
+      <span class="task-tag pill-green">routine</span>
+    </div>
+  </div>
+
+  <!-- SHOULD DO -->
+  <div class="section-label" style="color:var(--blue)">🔵 SHOULD DO</div>
+  <div class="card">
+    <div class="task-item" onclick="toggleTask(this)">
+      <div class="task-check blue"></div>
+      <div style="flex:1">
+        <div class="task-text">Buy vegetables + salt</div>
+      </div>
+      <span class="task-tag pill-blue">errands</span>
+    </div>
+    <div class="task-item" style="border:none" onclick="toggleTask(this)">
+      <div class="task-check blue"></div>
+      <div style="flex:1">
+        <div class="task-text">Doctor appointment</div>
+        <div class="carried-flag">↩ CARRIED FORWARD</div>
+      </div>
+      <span class="task-tag pill-blue">health</span>
+    </div>
+  </div>
+
+  <!-- CAN DO -->
+  <div class="section-label" style="color:#22c55e">🟢 CAN DO</div>
+  <div class="card">
+    <div class="task-item" style="border:none" onclick="toggleTask(this)">
+      <div class="task-check" style="border-color:#22c55e"></div>
+      <div style="flex:1">
+        <div class="task-text">Gym</div>
+        <div class="carried-flag">↩ CARRIED 3× THIS WEEK</div>
+      </div>
+      <span class="task-tag pill-green">health</span>
+    </div>
+  </div>
+
+  <!-- EVENING CHECK IN -->
+  <div class="card" style="margin-top:8px;border-color:rgba(245,158,11,0.2);border-left:3px solid #f59e0b">
+    <div style="font-size:9px;color:#f59e0b;letter-spacing:2px;margin-bottom:8px">🌙 EVENING CHECK-IN</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.6">Mark what's done. Carry forward or drop it. No guilt — just data.</div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- WHAT'S ALIVE SCREEN -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-alive" class="screen">
+
+  <div class="page-title">What's Alive</div>
+  <div class="page-sub">EVERYTHING OPEN IN YOUR LIFE</div>
+
+  <div style="margin-top:20px" id="alive-list">
+
+    <div class="alive-item" style="border-left:3px solid var(--blue)">
+      <div class="alive-left">
+        <div class="alive-icon">💼</div>
+        <div>
+          <div class="alive-label">Job applications</div>
+          <div class="alive-sub">active · 3–4 PM today · 1/3 this week</div>
+        </div>
+      </div>
+      <span class="status-pill pill-blue">ACTIVE</span>
+    </div>
+
+    <div class="alive-item" style="border-left:3px solid #f59e0b">
+      <div class="alive-left">
+        <div class="alive-icon">🏥</div>
+        <div>
+          <div class="alive-label">Doctor appointment</div>
+          <div class="alive-sub">this week · no date set yet</div>
+        </div>
+      </div>
+      <span class="status-pill pill-amber">PENDING</span>
+    </div>
+
+    <div class="alive-item" style="border-left:3px solid var(--red)">
+      <div class="alive-left">
+        <div class="alive-icon">🏋️</div>
+        <div>
+          <div class="alive-label">Gym</div>
+          <div class="alive-sub">carried 3× this week · pattern detected</div>
+        </div>
+      </div>
+      <span class="status-pill pill-red">FLAGGED</span>
+    </div>
+
+    <div class="alive-item" style="border-left:3px solid #f59e0b">
+      <div class="alive-left">
+        <div class="alive-icon">🥦</div>
+        <div>
+          <div class="alive-label">Groceries</div>
+          <div class="alive-sub">pending · salt especially</div>
+        </div>
+      </div>
+      <span class="status-pill pill-amber">PENDING</span>
+    </div>
+
+    <div class="alive-item" style="border-left:3px solid var(--red)">
+      <div class="alive-left">
+        <div class="alive-icon">🇩🇪</div>
+        <div>
+          <div class="alive-label">German study</div>
+          <div class="alive-sub">B2 goal · last done 2 days ago</div>
+        </div>
+      </div>
+      <span class="status-pill pill-red">FLAGGED</span>
+    </div>
+
+  </div>
+
+  <button class="add-btn">+ ADD OPEN ITEM</button>
+
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- WEEKLY SCREEN -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-weekly" class="screen">
+
+  <div class="header-row">
+    <div>
+      <div class="page-title">This Week</div>
+      <div class="page-sub">APR 28 — MAY 3 · 2026</div>
+    </div>
+    <div style="display:flex;gap:8px;padding-top:8px">
+      <button onclick="changeWeek(-1)" style="background:var(--faint);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--white);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px">←</button>
+      <button onclick="changeWeek(1)" style="background:var(--faint);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--white);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px">→</button>
+    </div>
+  </div>
+
+  <!-- FOCUS THEME -->
+  <div class="week-theme">
+    <div style="font-size:9px;color:var(--red);letter-spacing:2.5px;margin-bottom:8px">THIS WEEK'S FOCUS</div>
+    <div class="week-theme-word">Applications</div>
+  </div>
+
+  <!-- GOAL PROGRESS -->
+  <div class="section-label">WEEKLY GOALS</div>
+
+  <div class="goal-track">
+    <div class="goal-track-label">Apply to 3 Business Analyst roles in Berlin</div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width:33%"></div>
+    </div>
+    <div class="goal-track-sub">1 OF 3 · 4 DAYS LEFT</div>
+  </div>
+
+  <div class="goal-track">
+    <div class="goal-track-label">Go to gym at least 2×</div>
+    <div class="progress-bar">
+      <div class="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="goal-track-sub">0 OF 2 · FLAGGED</div>
+  </div>
+
+  <!-- DAY DOTS -->
+  <div class="section-label">DAILY SNAPSHOT</div>
+  <div class="card">
+    <div class="day-dots">
+      <div class="day-dot-wrap">
+        <div class="day-dot-label">M</div>
+        <div class="day-dot" style="background:#fb923c"></div>
+      </div>
+      <div class="day-dot-wrap">
+        <div class="day-dot-label">T</div>
+        <div class="day-dot" style="background:#22c55e"></div>
+      </div>
+      <div class="day-dot-wrap">
+        <div class="day-dot-label">W</div>
+        <div class="day-dot" style="background:var(--red)"></div>
+      </div>
+      <div class="day-dot-wrap">
+        <div class="day-dot-label">T</div>
+        <div class="day-dot" style="background:#22c55e"></div>
+      </div>
+      <div class="day-dot-wrap">
+        <div class="day-dot-label">F</div>
+        <div class="day-dot" style="background:#fb923c"></div>
+      </div>
+      <div class="day-dot-wrap">
+        <div class="day-dot-label">S</div>
+        <div class="day-dot" style="background:var(--red)"></div>
+      </div>
+      <div class="day-dot-wrap">
+        <div class="day-dot-label">S</div>
+        <div class="day-dot" style="background:var(--blue);box-shadow:0 0 8px var(--blue)"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WINS -->
+  <div class="section-label" style="color:#22c55e">🏆 WINS THIS WEEK</div>
+  <div class="card" style="border-left:3px solid #22c55e">
+    <div class="win-item"><span style="color:#22c55e">✓</span>First job application sent</div>
+    <div class="win-item"><span style="color:#22c55e">✓</span>Consistent morning routine</div>
+    <div class="win-item" style="border:none"><span style="color:#22c55e">✓</span>Planned doctor visit</div>
+  </div>
+
+  <!-- SLIPPING -->
+  <div class="section-label" style="color:var(--red)">↩ KEPT SLIPPING</div>
+  <div class="card" style="border-left:3px solid var(--red)">
+    <div class="win-item"><span style="color:var(--red)">↩</span>Gym — skipped 3×</div>
+    <div class="win-item" style="border:none"><span style="color:var(--red)">↩</span>German study — 2 day gap</div>
+    <div style="font-size:9px;color:var(--muted);letter-spacing:1px;margin-top:10px">PATTERN: SKIPPED ON LOW ENERGY DAYS</div>
+  </div>
+
+  <!-- HABITS -->
+  <div class="section-label">HABITS · THIS WEEK</div>
+  <div class="card">
+    <div class="habit-row">
+      <div class="habit-name">Gym</div>
+      <div class="habit-dots">
+        <div class="habit-dot" style="background:var(--red)"></div>
+        <div class="habit-dot" style="background:var(--red)"></div>
+        <div class="habit-dot" style="background:var(--red)"></div>
+        <div class="habit-dot" style="background:var(--red)"></div>
+        <div class="habit-dot" style="background:var(--red)"></div>
+        <div class="habit-dot" style="background:var(--red)"></div>
+        <div class="habit-dot" style="background:var(--red)"></div>
+      </div>
+    </div>
+    <div class="habit-row">
+      <div class="habit-name">Job apps</div>
+      <div class="habit-dots">
+        <div class="habit-dot" style="background:var(--faint)"></div>
+        <div class="habit-dot" style="background:var(--faint)"></div>
+        <div class="habit-dot" style="background:var(--faint)"></div>
+        <div class="habit-dot" style="background:var(--faint)"></div>
+        <div class="habit-dot" style="background:var(--faint)"></div>
+        <div class="habit-dot" style="background:var(--faint)"></div>
+        <div class="habit-dot" style="background:#22c55e"></div>
+      </div>
+    </div>
+    <div class="habit-row" style="border:none">
+      <div class="habit-name">Morning dump</div>
+      <div class="habit-dots">
+        <div class="habit-dot" style="background:#22c55e"></div>
+        <div class="habit-dot" style="background:#22c55e"></div>
+        <div class="habit-dot" style="background:#22c55e"></div>
+        <div class="habit-dot" style="background:#22c55e"></div>
+        <div class="habit-dot" style="background:#22c55e"></div>
+        <div class="habit-dot" style="background:var(--faint)"></div>
+        <div class="habit-dot" style="background:#22c55e"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LOG SCREEN -->
+<!-- ═══════════════════════════════════════ -->
+<div id="screen-log" class="screen">
+
+  <div class="page-title">Journey</div>
+  <div class="page-sub">YOUR COMPLETE LOG · ALL CHATS</div>
+
+  <div style="margin-top:20px" id="chat-log">
+
+    <!-- CHAT 001 -->
+    <div class="chat-card">
+      <div class="chat-header" onclick="toggleChat(this)">
+        <div>
+          <div class="chat-num">CHAT 001</div>
+          <div class="chat-date">May 3, 2026 — Sunday</div>
+          <div class="chat-summary">Applied to 1 job · Slow start, strong finish</div>
+        </div>
+        <div class="chat-chevron">▼</div>
+      </div>
+      <div class="chat-body">
+
+        <div class="block-item">
+          <div class="block-num">BLOCK 1.0 · MORNING</div>
+          <div class="block-row">One Big Thing: <span>Apply for jobs</span></div>
+          <div class="block-row">Must: <span>Job app · Work · Breakfast</span></div>
+          <div class="block-row">Should: <span>Groceries · Doctor</span></div>
+          <div class="block-row">Can: <span>Gym</span></div>
+          <div class="block-row">Week goal: <span>3 applications → 0/3</span></div>
+        </div>
+
+        <div class="block-item" style="border:none">
+          <div class="block-num">BLOCK 1.1 · EVENING</div>
+          <div class="block-row">Must done: <span>Work ✓ · Breakfast ✓</span></div>
+          <div class="block-row">Applied: <span>1 job sent ✓</span></div>
+          <div class="block-row">Carried: <span>Gym · Doctor</span></div>
+          <div class="block-row">Week goal: <span>3 applications → 1/3</span></div>
+          <div class="block-row">One line: <span>Slow start, strong finish.</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- PLACEHOLDER FOR FUTURE CHATS -->
+    <div style="text-align:center;padding:30px 0;color:var(--muted);font-size:11px;letter-spacing:1.5px">
+      CHAT 002 WILL APPEAR HERE<br>
+      <span style="font-size:9px;margin-top:6px;display:block;color:#333">EVERY SESSION LOGGED AUTOMATICALLY</span>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ── NAVIGATION ────────────────────────────────────
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+}
+
+// ── TASK TOGGLE ───────────────────────────────────
+function toggleTask(row) {
+  const check = row.querySelector('.task-check');
+  const text = row.querySelector('.task-text');
+  if (check.classList.contains('done')) {
+    check.classList.remove('done');
+    check.innerHTML = '';
+    text.classList.remove('done-text');
+  } else {
+    check.classList.add('done');
+    check.innerHTML = '✓';
+    text.classList.add('done-text');
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  const all = document.querySelectorAll('#screen-tasks .task-check');
+  const done = document.querySelectorAll('#screen-tasks .task-check.done');
+  const pct = (done.length / all.length) * 100;
+  document.querySelectorAll('.progress-fill').forEach(b => b.style.width = pct + '%');
+}
+
+// ── CHAT LOG TOGGLE ───────────────────────────────
+function toggleChat(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.chat-chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  header.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+
+// ── WEEK NAVIGATION ───────────────────────────────
+let weekOffset = 0;
+function changeWeek(dir) {
+  weekOffset += dir;
+  const label = weekOffset === 0 ? 'APR 28 — MAY 3 · 2026' :
+                weekOffset === -1 ? 'APR 21 — APR 27 · 2026' :
+                weekOffset === 1 ? 'MAY 4 — MAY 10 · 2026' : '...';
+  document.querySelector('#screen-weekly .page-sub').textContent = label;
+}
+
+// ── ADD NEW CHAT BLOCK (called by paste) ──────────
+function addChatBlock(chatNum, blockNum, type, data) {
+  const log = document.getElementById('chat-log');
+  const placeholder = log.querySelector('div[style*="CHAT 002"]');
+
+  // Find or create chat card
+  let chatCard = document.getElementById('chat-' + chatNum);
+  if (!chatCard) {
+    chatCard = document.createElement('div');
+    chatCard.className = 'chat-card';
+    chatCard.id = 'chat-' + chatNum;
+    chatCard.innerHTML = `
+      <div class="chat-header" onclick="toggleChat(this)">
+        <div>
+          <div class="chat-num">CHAT ${String(chatNum).padStart(3,'0')}</div>
+          <div class="chat-date">${data.date}</div>
+          <div class="chat-summary">${data.summary}</div>
+        </div>
+        <div class="chat-chevron">▼</div>
+      </div>
+      <div class="chat-body open"></div>
+    `;
+    if (placeholder) log.insertBefore(chatCard, placeholder);
+    else log.appendChild(chatCard);
+  }
+
+  const body = chatCard.querySelector('.chat-body');
+  const block = document.createElement('div');
+  block.className = 'block-item';
+  block.innerHTML = `
+    <div class="block-num">BLOCK ${blockNum} · ${type.toUpperCase()}</div>
+    ${Object.entries(data.rows || {}).map(([k,v]) =>
+      `<div class="block-row">${k}: <span>${v}</span></div>`
+    ).join('')}
+  `;
+  body.appendChild(block);
+
+  // Update context block
+  updateContextBlock(chatNum, data);
+}
+
+function updateContextBlock(chatNum, data) {
+  const ctx = document.getElementById('context-block');
+  if (data.contextUpdate) {
+    ctx.innerHTML = data.contextUpdate;
+  }
+}
+</script>
+
+</body>
+</html>
