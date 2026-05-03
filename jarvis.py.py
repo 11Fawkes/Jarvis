@@ -125,6 +125,7 @@ def parse_log_block(text):
     # Simple key:value fields
     field_map = {
         'Date:': 'date',
+        'Energy:': 'energy',
         'One Big Thing:': 'obt',
         'Must:': 'must',
         'Should:': 'should',
@@ -139,6 +140,9 @@ def parse_log_block(text):
         'Habits:': 'habits_update',
         'Wins:': 'wins_update',
         'Slipping:': 'slipping_update',
+        'Proof created today:': 'proof_today',
+        'Job metrics:': 'job_metrics',
+        'Tomorrow first move:': 'tomorrow_move',
     }
     for line in lines:
         line = line.strip()
@@ -297,6 +301,16 @@ if '⌂' in page:
             st.markdown('<div class="sec sec-amber">↩ CARRIED FORWARD</div>', unsafe_allow_html=True)
             st.markdown(f'<div class="j-card j-card-amber"><div style="font-size:.82rem;color:#aaa">{latest.get("carried")}</div></div>', unsafe_allow_html=True)
 
+        # Proof + Tomorrow
+        proof = latest.get('proof_today','') if latest else ''
+        tomorrow = latest.get('tomorrow_move','') if latest else ''
+        if proof and proof.upper() != 'NONE':
+            st.markdown('<div class="sec sec-green">✓ PROOF TODAY</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="j-card j-card-green"><div style="font-size:.82rem;color:#aaa">{proof}</div></div>', unsafe_allow_html=True)
+        if tomorrow and tomorrow.upper() != 'NONE':
+            st.markdown('<div class="sec sec-blue">→ TOMORROW\'S FIRST MOVE</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="j-card j-card-blue"><div style="font-size:.82rem;color:#aaa">{tomorrow}</div></div>', unsafe_allow_html=True)
+
     with c2:
         done_c = total_c = 0
         if latest:
@@ -323,6 +337,30 @@ if '⌂' in page:
             st.markdown(f'<div class="stat-card"><div class="stat-lbl">SESSIONS</div><div class="stat-num" style="color:#E63946">{len(chats)}</div></div>', unsafe_allow_html=True)
         with b2:
             st.markdown(f'<div class="stat-card"><div class="stat-lbl">DAY</div><div class="stat-num" style="color:#f59e0b">{challenge_day}</div></div>', unsafe_allow_html=True)
+
+        # Energy indicator
+        energy = latest.get('energy', 'unknown') if latest else 'unknown'
+        energy_color = {'low':'#E63946','medium':'#f59e0b','high':'#22c55e','unknown':'#333'}.get(energy.lower(),'#333')
+        energy_bar = {'low':33,'medium':66,'high':100,'unknown':0}.get(energy.lower(),0)
+        st.markdown(f'''
+        <div class="j-card" style="margin-top:10px">
+            <div class="stat-lbl">ENERGY TODAY</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+                <div style="font-size:.85rem;color:{energy_color};text-transform:uppercase;letter-spacing:1px">{energy}</div>
+                <div style="flex:1;background:#202020;border-radius:99px;height:4px">
+                    <div style="background:{energy_color};border-radius:99px;height:4px;width:{energy_bar}%"></div>
+                </div>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+
+        # Job metrics
+        metrics = latest.get('job_metrics','') if latest else ''
+        if metrics and metrics.upper() not in ['','NONE','UNKNOWN']:
+            st.markdown('<div class="sec">📊 JOB METRICS</div>', unsafe_allow_html=True)
+            metric_parts = [m.strip() for m in metrics.split('·')]
+            metric_html = ''.join([f'<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #202020;font-size:.75rem"><span style="color:#555">{p.split(":")[0].strip() if ":" in p else p}</span><span style="color:#aaa">{p.split(":")[1].strip() if ":" in p else "—"}</span></div>' for p in metric_parts if p])
+            st.markdown(f'<div class="j-card">{metric_html}</div>', unsafe_allow_html=True)
 
         st.markdown('<div class="sec">◎ OPEN LOOPS</div>', unsafe_allow_html=True)
         for item in data.get('alive', [])[:4]:
@@ -373,6 +411,15 @@ elif '✓' in page:
         st.markdown('<hr>', unsafe_allow_html=True)
         st.markdown('<div class="j-card j-card-amber"><div style="font-size:.58rem;color:#f59e0b;letter-spacing:2px;margin-bottom:8px">🌙 EVENING CHECK-IN</div><div style="font-size:.8rem;color:#555;line-height:1.7">Finish your Claude chat. Type FINISH. Paste the block in the Update section.</div></div>', unsafe_allow_html=True)
 
+        proof = latest.get('proof_today','')
+        tomorrow = latest.get('tomorrow_move','')
+        if proof and proof.upper() != 'NONE':
+            st.markdown('<div class="sec sec-green">✓ PROOF CREATED TODAY</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="j-card j-card-green"><div style="font-size:.82rem;color:#aaa">{proof}</div></div>', unsafe_allow_html=True)
+        if tomorrow and tomorrow.upper() != 'NONE':
+            st.markdown('<div class="sec sec-blue">→ TOMORROW\'S FIRST MOVE</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="j-card j-card-blue"><div style="font-size:.82rem;color:#aaa">{tomorrow}</div></div>', unsafe_allow_html=True)
+
 # ═══════════════════════════════════════════════
 # WHAT'S ALIVE
 # ═══════════════════════════════════════════════
@@ -405,6 +452,13 @@ elif '↗' in page:
             st.markdown('<div class="sec sec-red">↩ SLIPPING</div>', unsafe_allow_html=True)
             slip = ''.join([f'<div class="win-item"><span style="color:#E63946">↩</span>{w}</div>' for w in slipping])
             st.markdown(f'<div class="j-card j-card-red">{slip}</div>', unsafe_allow_html=True)
+
+        # Weekly job metrics from latest block
+        if latest and latest.get('job_metrics','').upper() not in ['','NONE','UNKNOWN']:
+            st.markdown('<div class="sec">📊 JOB METRICS THIS WEEK</div>', unsafe_allow_html=True)
+            metric_parts = [m.strip() for m in latest.get('job_metrics','').split('·')]
+            metric_html = ''.join([f'<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #202020;font-size:.78rem"><span style="color:#555">{p.split(":")[0].strip() if ":" in p else p}</span><span style="color:#aaa;font-weight:700">{p.split(":")[1].strip() if ":" in p else "—"}</span></div>' for p in metric_parts if p])
+            st.markdown(f'<div class="j-card">{metric_html}</div>', unsafe_allow_html=True)
 
     with c2:
         st.markdown('<div class="sec">WEEKLY GOALS</div>', unsafe_allow_html=True)
@@ -509,7 +563,8 @@ elif '📖' in page:
             cs = chat.get('one_line','')
             with st.expander(f"Chat {cn2}  ·  {cd2}", expanded=False):
                 st.markdown(f'<div style="font-family:Cormorant Garamond,serif;font-style:italic;font-size:.95rem;color:#444;margin-bottom:12px">"{cs}"</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="log-detail"><b style="color:#555">OBT:</b> <span>{chat.get("obt","—")}</span><br><b style="color:#555">Must:</b> <span>{chat.get("must","—")}</span><br><b style="color:#555">Should:</b> <span>{chat.get("should","—")}</span><br><b style="color:#555">Can:</b> <span>{chat.get("can","—")}</span><br><b style="color:#555">Carried:</b> <span>{chat.get("carried","NONE")}</span><br><b style="color:#555">Week:</b> <span>{chat.get("week_goal","—")}</span><br><b style="color:#555">Parked:</b> <span>{chat.get("parked","NONE")}</span></div>', unsafe_allow_html=True)
+                energy_c = {'low':'#E63946','medium':'#f59e0b','high':'#22c55e','unknown':'#333'}.get(chat.get('energy','unknown').lower(),'#333')
+                st.markdown(f'<div class="log-detail"><b style="color:#555">Energy:</b> <span style="color:{energy_c}">{chat.get("energy","—")}</span><br><b style="color:#555">OBT:</b> <span>{chat.get("obt","—")}</span><br><b style="color:#555">Must:</b> <span>{chat.get("must","—")}</span><br><b style="color:#555">Should:</b> <span>{chat.get("should","—")}</span><br><b style="color:#555">Can:</b> <span>{chat.get("can","—")}</span><br><b style="color:#555">Carried:</b> <span>{chat.get("carried","NONE")}</span><br><b style="color:#555">Week:</b> <span>{chat.get("week_goal","—")}</span><br><b style="color:#555">Proof:</b> <span>{chat.get("proof_today","NONE")}</span><br><b style="color:#555">Job metrics:</b> <span>{chat.get("job_metrics","—")}</span><br><b style="color:#555">Tomorrow:</b> <span>{chat.get("tomorrow_move","—")}</span><br><b style="color:#555">Parked:</b> <span>{chat.get("parked","NONE")}</span></div>', unsafe_allow_html=True)
                 for block in chat.get('blocks',[]):
                     bn = block.get('block_num','')
                     bt = block.get('session_type','')
@@ -529,20 +584,24 @@ elif '＋' in page:
         log_input = st.text_area('', height=340,
             placeholder="""=== CHAT 002 · BLOCK 2.0 · MORNING ===
 Date: Monday, May 4 2026
-One Big Thing: Apply to Capgemini Invent
+Energy: medium
+One Big Thing: Apply to Capgemini Invent ✗
 Must: Apply to 1 job ✗ · Breakfast ✓ · Work ✓
 Should: Buy groceries ✗ · Doctor appointment ✗
 Can: Gym ✗
 Carried forward: Gym · Doctor appointment
-Week goal: Apply to 3 BA roles → 0/3
+Week goal: Apply to 3 BA roles → 0/3 done
 Parked: NONE
 One line: Day 1. Showed up.
 Week theme: Applications
 Week range: May 4 — May 10
 Alive updates: Job apps:active · Doctor:pending · Gym:flagged
 Habits: Gym:0 · Job apps:0 · Morning dump:1
-Wins: First morning dump done | Week started strong
+Wins: First morning dump done
 Slipping: NONE
+Proof created today: NONE
+Job metrics: Applications:0 · CVs tailored:0 · Recruiters:0 · Follow-ups:0 · Interviews:0
+Tomorrow first move: Open Capgemini post and tailor first 3 CV bullets
 === END BLOCK ===""",
             label_visibility='collapsed'
         )
@@ -559,13 +618,16 @@ Slipping: NONE
                     # Add/update chat entry
                     cn3 = parsed.get('chat_num', len(chats) + 1)
                     idx = next((i for i, c in enumerate(chats) if c.get('chat_num') == cn3), None)
+                    # Clean copy for storing inside blocks — avoids circular reference
+                    clean = {k: v for k, v in parsed.items() if k != 'blocks'}
+
                     if idx is not None:
-                        chats[idx].update(parsed)
+                        chats[idx].update(clean)
                         if 'blocks' not in chats[idx]: chats[idx]['blocks'] = []
-                        chats[idx]['blocks'].append({'block_num': parsed.get('block_num',''), 'session_type': parsed.get('session_type',''), 'data': parsed})
+                        chats[idx]['blocks'].append({'block_num': clean.get('block_num',''), 'session_type': clean.get('session_type',''), 'data': clean})
                     else:
-                        parsed['blocks'] = [{'block_num': parsed.get('block_num','1.0'), 'session_type': parsed.get('session_type','MORNING'), 'data': parsed}]
-                        chats.append(parsed)
+                        clean['blocks'] = [{'block_num': clean.get('block_num','1.0'), 'session_type': clean.get('session_type','MORNING'), 'data': clean}]
+                        chats.append(clean)
 
                     data['chats'] = chats
                     save_data(data)
@@ -593,24 +655,28 @@ Slipping: NONE
 
         st.markdown('''
         <div class="j-card j-card-amber" style="margin-top:10px">
-            <div style="font-size:.58rem;color:#f59e0b;letter-spacing:2px;margin-bottom:10px">FULL BLOCK FORMAT</div>
+            <div style="font-size:.58rem;color:#f59e0b;letter-spacing:2px;margin-bottom:10px">FULL BLOCK FORMAT v6</div>
             <div style="font-size:.62rem;color:#3a3a3a;line-height:2;font-family:monospace">
                 === CHAT [N] · BLOCK [X.Y] ===<br>
                 Date: Weekday, Mon DD YYYY<br>
+                Energy: low/medium/high<br>
                 One Big Thing: ... ✓/✗<br>
                 Must: item ✓ · item ✗<br>
                 Should: item ✓ · item ✗<br>
                 Can: item ✗<br>
                 Carried forward: ...<br>
-                Week goal: goal → X/Y<br>
+                Week goal: goal → X/Y done<br>
                 Parked: ...<br>
                 One line: ...<br>
                 <span style="color:#555">Week theme: word</span><br>
                 <span style="color:#555">Week range: May 4 — May 10</span><br>
-                <span style="color:#555">Alive updates: Job apps:active · Gym:flagged</span><br>
+                <span style="color:#555">Alive updates: Job apps:active</span><br>
                 <span style="color:#555">Habits: Gym:0 · Job apps:1 · Morning dump:1</span><br>
-                <span style="color:#555">Wins: win1 | win2 | win3</span><br>
+                <span style="color:#555">Wins: win1 | win2</span><br>
                 <span style="color:#555">Slipping: item1 | item2</span><br>
+                <span style="color:#1D7FE8">Proof created today: ...</span><br>
+                <span style="color:#1D7FE8">Job metrics: Apps:X · CVs:X · ...</span><br>
+                <span style="color:#1D7FE8">Tomorrow first move: ...</span><br>
                 === END BLOCK ===
             </div>
         </div>
