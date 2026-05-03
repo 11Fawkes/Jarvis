@@ -1,16 +1,33 @@
 {
   "chats": [],
   "alive": [
-    {"icon": "💼", "label": "Job applications", "sub": "active · target: 3/week", "status": "active"},
-    {"icon": "🏥", "label": "Doctor appointment", "sub": "this week · no date set", "status": "pending"},
-    {"icon": "🏋️", "label": "Gym", "sub": "goal: 3× per week", "status": "flagged"},
-    {"icon": "🥦", "label": "Groceries", "sub": "pending · salt especially", "status": "pending"},
-    {"icon": "🇩🇪", "label": "German study", "sub": "B2 goal · targeting daily", "status": "flagged"}
+    {"icon": "💼", "label": "Job applications", "sub": "active · 2 tracks: BA + Strategy", "status": "active"},
+    {"icon": "🤝", "label": "Mini job — Jan contact", "sub": "follow up needed · sent via Akanksha", "status": "pending"},
+    {"icon": "🏛️", "label": "Migrationsberatung", "sub": "appointment needed · visa urgent", "status": "pending"},
+    {"icon": "🏥", "label": "Doctor appointment", "sub": "Hausarzt + ADHD referral", "status": "pending"},
+    {"icon": "🏋️", "label": "Gym", "sub": "goal: 3× per week · knee recovering", "status": "flagged"},
+    {"icon": "🇩🇪", "label": "German study", "sub": "B2 goal · class dropped this month", "status": "flagged"},
+    {"icon": "🎓", "label": "Uni Assist", "sub": "check status this week", "status": "pending"},
+    {"icon": "🗂️", "label": "Portfolio", "sub": "ongoing · 11fawkes.github.io", "status": "active"},
+    {"icon": "💰", "label": "Rent payment", "sub": "630€ due · April + May", "status": "flagged"}
   ],
-  "weekly_goals": ["Apply to 3 Business Analyst roles in Berlin"],
-  "week_theme": "Applications",
+  "weekly_goals": [
+    "Follow up Jan + send 2 job applications",
+    "Book Migrationsberatung appointment"
+  ],
+  "week_theme": "Survival",
+  "weekly_wins": [],
+  "weekly_slipping": [
+    "German class — dropped this month (money)"
+  ],
+  "habits": [
+    {"name": "Gym", "days": [0,0,0,0,0,0,0]},
+    {"name": "Job apps", "days": [0,0,0,0,0,0,0]},
+    {"name": "Morning dump", "days": [0,0,0,0,0,0,0]}
+  ],
   "settings": {
     "challenge_start": "2026-05-04",
-    "name": "Dhruv"
+    "name": "Dhruv",
+    "week_range": "May 4 — May 10"
   }
 }
